@@ -18,8 +18,8 @@ const modules = [
     id: 'hashcat',
     name: 'Hashcat',
     description: 'Advanced password recovery. Supports over 300 hash types with GPU acceleration.',
-    status: 'linux-only',
-    path: null,
+    status: 'active',
+    path: '/hashcat',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
@@ -30,8 +30,8 @@ const modules = [
     id: 'aircrack',
     name: 'Aircrack-ng',
     description: 'Complete suite for WiFi network security assessment and WEP/WPA/WPA2 cracking.',
-    status: 'linux-only',
-    path: null,
+    status: 'wsl2',
+    path: '/aircrack',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M5 12.55a11 11 0 0 1 14.08 0" />
@@ -45,8 +45,8 @@ const modules = [
     id: 'metasploit',
     name: 'Metasploit',
     description: 'Penetration testing framework with hundreds of exploit modules and payloads.',
-    status: 'linux-only',
-    path: null,
+    status: 'wsl2',
+    path: '/metasploit',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -57,8 +57,8 @@ const modules = [
     id: 'thehive',
     name: 'TheHive',
     description: 'Scalable, open source security incident response platform for SOC teams.',
-    status: 'coming-soon',
-    path: null,
+    status: 'active',
+    path: '/thehive',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
@@ -83,8 +83,8 @@ function StatusBadge({ status }) {
   if (status === 'active') {
     return <span className="badge badge-active">Active</span>
   }
-  if (status === 'linux-only') {
-    return <span className="badge badge-linux">Requires Linux</span>
+  if (status === 'wsl2') {
+    return <span className="badge badge-active">Active via WSL2</span>
   }
   return <span className="badge badge-info">Coming Soon</span>
 }
@@ -99,15 +99,15 @@ export default function Dashboard() {
 
       <div className="stats-row">
         <div className="stat-card">
-          <div className="stat-value">1</div>
+          <div className="stat-value">5</div>
           <div className="stat-label">Active Modules</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value">3</div>
-          <div className="stat-label">Linux Only</div>
+          <div className="stat-value">2</div>
+          <div className="stat-label">Via WSL2</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value">2</div>
+          <div className="stat-value">1</div>
           <div className="stat-label">Coming Soon</div>
         </div>
         <div className="stat-card">
@@ -121,23 +121,20 @@ export default function Dashboard() {
         {modules.map((mod) => (
           <div
             key={mod.id}
-            className={`module-card ${mod.status !== 'active' ? 'module-card-disabled' : 'module-card-active'}`}
+            className={`module-card ${mod.status === 'coming-soon' ? 'module-card-disabled' : 'module-card-active'}`}
             onClick={() => mod.path && (window.location.href = mod.path)}
           >
             <div className="module-card-header">
-              <div className={`module-icon ${mod.status !== 'active' ? 'module-icon-dim' : ''}`}>
+              <div className={`module-icon ${mod.status === 'coming-soon' ? 'module-icon-dim' : ''}`}>
                 {mod.icon}
               </div>
               <StatusBadge status={mod.status} />
             </div>
             <div className="module-name">{mod.name}</div>
             <div className="module-description">{mod.description}</div>
-            {mod.status === 'active' && (
+            {mod.status !== 'coming-soon' && (
               <div className="module-launch">
-                Launch module
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
+                Launch module →
               </div>
             )}
           </div>
