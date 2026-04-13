@@ -4,6 +4,17 @@ const { spawn } = require('child_process')
 const fs = require('fs')
 const http = require('http')
 
+// ── Catch unhandled errors so Electron never exits silently ──────────────────
+
+process.on('uncaughtException', err => {
+  console.error('Uncaught exception:', err)
+  dialog.showErrorBox('SecureHub — Unexpected Error', err.stack || err.message)
+})
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason)
+})
+
 // ── Paths ────────────────────────────────────────────────────────────────────
 
 const isDev = !app.isPackaged
@@ -16,15 +27,20 @@ const LOG_DIR = isDev
   ? path.join(__dirname, '..', 'logs')
   : path.join(app.getPath('userData'), 'logs')
 
-if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true })
+try {
+  if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true })
+} catch (_) {}
 
 const LOG_FILE = path.join(LOG_DIR, 'backend.log')
-const logStream = fs.createWriteStream(LOG_FILE, { flags: 'a' })
+let logStream
+try {
+  logStream = fs.createWriteStream(LOG_FILE, { flags: 'a' })
+} catch (_) {}
 
 function log(msg) {
   const line = `[${new Date().toISOString()}] ${msg}\n`
-  logStream.write(line)
-  if (isDev) process.stdout.write(line)
+  if (logStream) logStream.write(line)
+  console.log(msg)
 }
 
 // ── Backend process ──────────────────────────────────────────────────────────
@@ -33,9 +49,8 @@ let backendProc = null
 
 function buildEnv() {
   const env = { ...process.env }
-  // Ensure Nmap is on PATH so the backend can call it
   const nmapDir = 'C:\\Program Files (x86)\\Nmap'
-  if (!env.PATH.includes(nmapDir)) {
+  if (env.PATH && !env.PATH.includes(nmapDir)) {
     env.PATH = nmapDir + ';' + env.PATH
   }
   return env
@@ -43,8 +58,18 @@ function buildEnv() {
 
 function startBackend() {
   return new Promise((resolve, reject) => {
-    const env = buildEnv()
+    let settled = false
+    let pollInterval = null
 
+    function done(err) {
+      if (settled) return
+      settled = true
+      if (pollInterval) clearInterval(pollInterval)
+      if (err) reject(err)
+      else resolve()
+    }
+
+    const env = buildEnv()
     let cmd, args, opts
 
     if (isDev) {
@@ -52,50 +77,48 @@ function startBackend() {
       args = ['main:app', '--port', '8000']
       opts = { cwd: BACKEND_DIR, env, shell: true }
     } else {
-      // In production use the Python bundled alongside the backend
       const pythonExe = path.join(BACKEND_DIR, 'python', 'python.exe')
       const hasBundledPython = fs.existsSync(pythonExe)
-
-      if (hasBundledPython) {
-        cmd = pythonExe
-        args = ['-m', 'uvicorn', 'main:app', '--port', '8000']
-      } else {
-        // Fall back to system Python
-        cmd = 'python'
-        args = ['-m', 'uvicorn', 'main:app', '--port', '8000']
-      }
+      cmd = hasBundledPython ? pythonExe : 'python'
+      args = ['-m', 'uvicorn', 'main:app', '--port', '8000']
       opts = { cwd: BACKEND_DIR, env, shell: true }
     }
 
     log(`Starting backend: ${cmd} ${args.join(' ')} (cwd: ${BACKEND_DIR})`)
 
-    backendProc = spawn(cmd, args, opts)
+    try {
+      backendProc = spawn(cmd, args, opts)
+    } catch (spawnErr) {
+      return done(spawnErr)
+    }
 
-    backendProc.stdout.on('data', d => log(`[backend] ${d.toString().trim()}`))
-    backendProc.stderr.on('data', d => log(`[backend:err] ${d.toString().trim()}`))
+    backendProc.stdout && backendProc.stdout.on('data', d => log(`[backend] ${d.toString().trim()}`))
+    backendProc.stderr && backendProc.stderr.on('data', d => log(`[backend:err] ${d.toString().trim()}`))
 
     backendProc.on('error', err => {
       log(`Backend spawn error: ${err.message}`)
-      reject(err)
+      done(err)
     })
 
     backendProc.on('exit', (code, signal) => {
       log(`Backend exited (code=${code} signal=${signal})`)
+      if (!settled) {
+        done(new Error(`Backend process exited unexpectedly (code=${code})`))
+      }
     })
 
-    // Poll until ready or timeout
+    // Poll until ready or 30s timeout
     const deadline = Date.now() + 30_000
-    const interval = setInterval(() => {
+    pollInterval = setInterval(() => {
       http.get('http://localhost:8000', res => {
+        res.resume() // consume response to free socket
         if (res.statusCode < 500) {
-          clearInterval(interval)
           log('Backend is ready.')
-          resolve()
+          done(null)
         }
       }).on('error', () => {
         if (Date.now() > deadline) {
-          clearInterval(interval)
-          reject(new Error('Backend did not start within 30 seconds.'))
+          done(new Error('Backend did not start within 30 seconds.\n\nCheck log: ' + LOG_FILE))
         }
       })
     }, 500)
@@ -105,7 +128,7 @@ function startBackend() {
 function killBackend() {
   if (backendProc && !backendProc.killed) {
     log('Killing backend process…')
-    backendProc.kill()
+    try { backendProc.kill() } catch (_) {}
   }
 }
 
@@ -122,65 +145,59 @@ function createLoadingWindow() {
     webPreferences: { nodeIntegration: false, contextIsolation: true },
   })
 
-  win.loadURL(`data:text/html,${encodeURIComponent(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-          background: #0a0a0f;
-          color: #e2e8f0;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          height: 100vh;
-          gap: 20px;
-        }
-        .logo { font-size: 28px; font-weight: 700; color: #d4351c; letter-spacing: 1px; }
-        .msg  { font-size: 14px; color: #94a3b8; }
-        .spinner {
-          width: 32px; height: 32px;
-          border: 3px solid #1e293b;
-          border-top-color: #d4351c;
-          border-radius: 50%;
-          animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-      </style>
-    </head>
-    <body>
-      <div class="logo">SecureHub</div>
-      <div class="spinner"></div>
-      <div class="msg">Starting SecureHub…</div>
-    </body>
-    </html>
-  `)}`)
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0f; color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100vh; gap: 20px;
+    }
+    .logo { font-size: 28px; font-weight: 700; color: #d4351c; letter-spacing: 1px; }
+    .msg  { font-size: 14px; color: #94a3b8; }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #1e293b; border-top-color: #d4351c;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="logo">SecureHub</div>
+  <div class="spinner"></div>
+  <div class="msg">Starting SecureHub…</div>
+</body>
+</html>`
 
+  win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html))
   return win
 }
 
 // ── Main window ──────────────────────────────────────────────────────────────
 
+const DEV_URL = 'http://localhost:5174'
+
 function createMainWindow() {
+  const iconPath = isDev ? path.join(__dirname, 'public', 'icon.ico') : undefined
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
     backgroundColor: '#0a0a0f',
     show: false,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-    },
+    webPreferences: { nodeIntegration: false, contextIsolation: true },
     titleBarStyle: 'default',
-    icon: path.join(__dirname, isDev ? 'public' : '', 'icon.ico'),
+    ...(iconPath ? { icon: iconPath } : {}),
   })
 
   if (isDev) {
-    win.loadURL('http://localhost:5173')
+    win.loadURL(DEV_URL)
   } else {
     win.loadFile(path.join(__dirname, 'dist', 'index.html'))
   }
@@ -194,31 +211,47 @@ function createMainWindow() {
 app.whenReady().then(async () => {
   const loader = createLoadingWindow()
 
+  let backendOk = false
   try {
     await startBackend()
+    backendOk = true
   } catch (err) {
-    loader.close()
+    log(`Backend failed: ${err.message}`)
+
+    // Hide loader but keep it alive so window-all-closed doesn't fire before dialog
+    loader.hide()
+
     await dialog.showMessageBox({
       type: 'error',
       title: 'SecureHub — Backend Failed',
       message: 'The backend could not be started.',
       detail:
         `${err.message}\n\n` +
-        `Log file: ${LOG_FILE}\n\n` +
+        `Log: ${LOG_FILE}\n\n` +
         'Make sure Python and uvicorn are installed:\n' +
         '  pip install uvicorn fastapi',
-      buttons: ['Quit'],
+      buttons: ['Continue Anyway', 'Quit'],
+    }).then(({ response }) => {
+      if (response === 1) {
+        app.quit()
+      }
     })
-    app.quit()
-    return
+
+    if (app.isQuiting) return
   }
 
   const mainWin = createMainWindow()
 
   mainWin.once('ready-to-show', () => {
-    loader.close()
+    if (!loader.isDestroyed()) loader.close()
     mainWin.show()
   })
+
+  // Fallback: if ready-to-show never fires, open after 10s
+  setTimeout(() => {
+    if (!loader.isDestroyed()) loader.close()
+    if (!mainWin.isDestroyed() && !mainWin.isVisible()) mainWin.show()
+  }, 10_000)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
@@ -229,4 +262,7 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
 
-app.on('quit', killBackend)
+app.on('quit', () => {
+  app.isQuiting = true
+  killBackend()
+})
