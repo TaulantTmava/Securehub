@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from modules.nmap import router as nmap_router
 from modules.hashcat import router as hashcat_router
 from modules.thehive import router as thehive_router
+from modules.metasploit import router as metasploit_router
+from modules.aircrack import router as aircrack_router
 
 app = FastAPI(title="SecureHub API")
 
@@ -17,6 +19,8 @@ app.add_middleware(
 app.include_router(nmap_router, prefix="/nmap")
 app.include_router(hashcat_router, prefix="/hashcat")
 app.include_router(thehive_router, prefix="/thehive")
+app.include_router(metasploit_router, prefix="/metasploit")
+app.include_router(aircrack_router, prefix="/aircrack")
 
 
 @app.get("/")

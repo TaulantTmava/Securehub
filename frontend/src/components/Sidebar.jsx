@@ -51,8 +51,7 @@ const modules = [
         <circle cx="12" cy="20" r="1" fill="currentColor" />
       </svg>
     ),
-    available: false,
-    linuxOnly: true,
+    available: true,
   },
   {
     id: 'metasploit',
@@ -63,8 +62,7 @@ const modules = [
         <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
       </svg>
     ),
-    available: false,
-    linuxOnly: true,
+    available: true,
   },
   {
     id: 'thehive',

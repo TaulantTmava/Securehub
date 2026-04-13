@@ -4,6 +4,8 @@ import Dashboard from './pages/Dashboard'
 import Nmap from './pages/Nmap'
 import Hashcat from './pages/Hashcat'
 import TheHive from './pages/TheHive'
+import Metasploit from './pages/Metasploit'
+import Aircrack from './pages/Aircrack'
 import './App.css'
 
 function App() {
@@ -18,6 +20,8 @@ function App() {
             <Route path="/nmap" element={<Nmap />} />
             <Route path="/hashcat" element={<Hashcat />} />
             <Route path="/thehive" element={<TheHive />} />
+            <Route path="/metasploit" element={<Metasploit />} />
+            <Route path="/aircrack" element={<Aircrack />} />
           </Routes>
         </main>
       </div>
