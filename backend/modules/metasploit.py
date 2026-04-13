@@ -86,7 +86,7 @@ def _grep_modules(query: str) -> list | None:
     Search Metasploit module files with grep — fast, no msfconsole startup cost.
     Returns a list of result dicts, or None if grep itself failed/unavailable.
     """
-    msf_modules_path = "/usr/share/metasploit-framework/modules/"
+    msf_modules_path = "/opt/metasploit-framework/embedded/framework/modules/"
     try:
         result = subprocess.run(
             ["wsl", "grep", "-ril", query, msf_modules_path, "--include=*.rb"],
@@ -106,24 +106,28 @@ def _grep_modules(query: str) -> list | None:
     results = []
     for path in paths:
         # Convert Linux path like:
-        # /usr/share/metasploit-framework/modules/exploit/windows/smb/ms17_010_eternalblue.rb
-        # → module_type = "exploit", name = "exploit/windows/smb/ms17_010_eternalblue"
+        # /opt/metasploit-framework/embedded/framework/modules/exploits/windows/smb/ms17_010_eternalblue.rb
+        # → type = "exploits", name = "ms17_010_eternalblue"
+        #   full path = "exploits/windows/smb/ms17_010_eternalblue"
         try:
             rel = path.split("/modules/", 1)[1] if "/modules/" in path else path
-            name = rel.rstrip(".rb")[:-3] if rel.endswith(".rb") else rel
-            parts = name.split("/")
+            if rel.endswith(".rb"):
+                rel_no_ext = rel[:-3]
+            else:
+                rel_no_ext = rel
+            parts = rel_no_ext.split("/")
             module_type = parts[0] if parts else ""
+            module_name = parts[-1] if parts else rel_no_ext
+            full_path = rel_no_ext
         except Exception:
-            name = path
             module_type = ""
+            module_name = path
+            full_path = path
 
         results.append({
-            "name": name,
-            "rank": "",
-            "check": "",
-            "description": "",
-            "raw": path,
+            "name": module_name,
             "type": module_type,
+            "path": full_path,
         })
 
     return results
@@ -162,13 +166,11 @@ def _parse_msf_search_output(output: str) -> list:
             description = " ".join(middle)
         elif len(parts) >= 3:
             description = " ".join(parts[2:])
+        parts = name.split("/")
         results.append({
-            "name": name,
-            "rank": rank,
-            "check": check,
-            "description": description,
-            "raw": stripped,
-            "type": name.split("/")[0] if "/" in name else "",
+            "name": parts[-1] if parts else name,
+            "type": parts[0] if len(parts) > 1 else "",
+            "path": name,
         })
     return results
 
