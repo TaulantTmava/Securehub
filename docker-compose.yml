@@ -1,0 +1,17 @@
+version: "3"
+services:
+  cassandra:
+    image: cassandra:4
+    environment:
+      CASSANDRA_CLUSTER_NAME: thehive
+    
+  thehive:
+    image: strangebee/thehive:5
+    depends_on:
+      - cassandra
+    ports:
+      - "9000:9000"
+    environment:
+      - db.janusgraph.storage.backend=cql
+      - db.janusgraph.storage.hostname=cassandra
+      - db.janusgraph.storage.cql.cluster-name=thehive

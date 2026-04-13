@@ -16,21 +16,37 @@ class ScanRequest(BaseModel):
 
 @router.get("/status")
 def status():
+    # Step 1: fast path — check if msfconsole binary exists via `which`
     try:
-        result = subprocess.run(
+        which_result = subprocess.run(
+            ["wsl", "which", "msfconsole"],
+            capture_output=True, text=True, timeout=10,
+        )
+    except FileNotFoundError:
+        return {"available": False, "version": None, "error": "WSL not found on this system"}
+    except subprocess.TimeoutExpired:
+        return {"available": False, "version": None, "error": "Timeout running wsl which msfconsole"}
+    except Exception as e:
+        return {"available": False, "version": None, "error": str(e)}
+
+    which_path = which_result.stdout.strip()
+    if not which_path:
+        return {"available": False, "version": None, "error": "msfconsole not found in WSL PATH"}
+
+    # Step 2: try to get version with a 30-second timeout
+    try:
+        version_result = subprocess.run(
             ["wsl", "msfconsole", "--version"],
             capture_output=True, text=True, timeout=30,
         )
-        output = (result.stdout + result.stderr).strip()
-        if result.returncode == 0 or "Metasploit" in output:
-            return {"available": True, "version": output, "wsl": True}
-        return {"available": False, "version": None, "wsl": True, "error": output or "msfconsole not found"}
-    except FileNotFoundError:
-        return {"available": False, "version": None, "wsl": False, "error": "WSL not found on this system"}
+        output = (version_result.stdout + version_result.stderr).strip()
+        version = output if output else None
+        return {"available": True, "version": version}
     except subprocess.TimeoutExpired:
-        return {"available": False, "version": None, "wsl": True, "error": "Timeout checking msfconsole"}
-    except Exception as e:
-        return {"available": False, "version": None, "wsl": False, "error": str(e)}
+        # Binary exists but version check timed out — still report available
+        return {"available": True, "version": None}
+    except Exception:
+        return {"available": True, "version": None}
 
 
 @router.post("/search")
