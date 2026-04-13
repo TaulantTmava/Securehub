@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 import subprocess
+import concurrent.futures
 import urllib.request
 import tempfile
 import os
@@ -7,29 +8,26 @@ import os
 router = APIRouter()
 
 
-def check_command(args, timeout=5):
+def check_command(cmd, timeout=3):
     try:
-        subprocess.run(
-            args,
-            capture_output=True,
-            timeout=timeout,
-            shell=True,
-        )
-        return True
-    except Exception:
+        result = subprocess.run(cmd, capture_output=True, timeout=timeout, shell=True)
+        return result.returncode == 0
+    except:
         return False
 
 
 @router.get("/status")
 def get_status():
-    return {
-        "nmap": check_command("nmap --version"),
-        "hashcat": check_command("hashcat --version"),
-        "wsl": check_command("wsl --status"),
-        "docker": check_command("docker --version"),
-        "metasploit": check_command("wsl msfconsole --version", timeout=10),
-        "aircrack": check_command("wsl aircrack-ng --help"),
-    }
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = {
+            "nmap":      executor.submit(check_command, "nmap --version", 3),
+            "hashcat":   executor.submit(check_command, "hashcat --version", 3),
+            "wsl":       executor.submit(check_command, "wsl --status", 3),
+            "docker":    executor.submit(check_command, "docker --version", 3),
+            "metasploit": executor.submit(check_command, "wsl which msfconsole", 5),
+            "aircrack":  executor.submit(check_command, "wsl which aircrack-ng", 5),
+        }
+        return {k: v.result(timeout=6) for k, v in futures.items()}
 
 
 @router.post("/install/nmap")
