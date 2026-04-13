@@ -7,7 +7,12 @@
       "Bash(npm install:*)",
       "Bash(npm run:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(python3 -)",
+      "Bash(\"C:/Users/Taula/Securehub/frontend/node_modules/app-builder-bin/win/x64/app-builder.exe\" download-artifact:*)",
+      "Bash(\"node_modules/app-builder-bin/win/x64/app-builder.exe\" download-artifact:*)",
+      "Bash(ls -lh \"C:/Users/Taula/Securehub/frontend/dist/\"*.exe)",
+      "Bash(ls -lh \"C:/Users/Taula/Securehub/frontend/dist/\"*.blockmap)"
     ]
   }
 }
