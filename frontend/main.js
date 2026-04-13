@@ -74,16 +74,14 @@ function startBackend() {
 
     if (isDev) {
       // Use venv Python directly to avoid activation issues
-      const venvPython = 'C:\\Users\\Taula\\Securehub\\backend\\venv\\Scripts\\python.exe'
-      cmd = venvPython
+      cmd = 'C:\\Users\\Taula\\Securehub\\backend\\venv\\Scripts\\python.exe'
       args = ['-m', 'uvicorn', 'main:app', '--port', '8000']
       opts = { cwd: 'C:\\Users\\Taula\\Securehub\\backend', env, shell: false }
     } else {
-      const pythonExe = path.join(BACKEND_DIR, 'python', 'python.exe')
-      const hasBundledPython = fs.existsSync(pythonExe)
-      cmd = hasBundledPython ? pythonExe : 'python'
-      args = ['-m', 'uvicorn', 'main:app', '--port', '8000']
-      opts = { cwd: BACKEND_DIR, env, shell: false }
+      // Production: use the self-contained PyInstaller exe bundled in resources
+      cmd = path.join(process.resourcesPath, 'securehub-backend.exe')
+      args = []
+      opts = { cwd: process.resourcesPath, env, shell: false }
     }
 
     log(`Starting backend: ${cmd} ${args.join(' ')} (cwd: ${BACKEND_DIR})`)
