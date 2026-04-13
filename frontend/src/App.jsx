@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
 import Nmap from './pages/Nmap'
 import Hashcat from './pages/Hashcat'
+import TheHive from './pages/TheHive'
 import './App.css'
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/nmap" element={<Nmap />} />
             <Route path="/hashcat" element={<Hashcat />} />
+            <Route path="/thehive" element={<TheHive />} />
           </Routes>
         </main>
       </div>
