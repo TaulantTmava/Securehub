@@ -11,10 +11,15 @@ function createWindow() {
       contextIsolation: true,
     },
     titleBarStyle: 'default',
-    icon: path.join(__dirname, 'public', 'icon.png'),
+    icon: path.join(__dirname, 'public', 'icon.ico'),
   })
 
-  win.loadURL('http://localhost:5173')
+  if (app.isPackaged) {
+    win.loadFile(path.join(__dirname, 'dist', 'index.html'))
+  } else {
+    win.loadURL('http://localhost:5173')
+  }
+
   win.setMenuBarVisibility(false)
 }
 
