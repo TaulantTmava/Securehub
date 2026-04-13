@@ -73,15 +73,17 @@ function startBackend() {
     let cmd, args, opts
 
     if (isDev) {
-      cmd = 'uvicorn'
-      args = ['main:app', '--port', '8000']
-      opts = { cwd: BACKEND_DIR, env, shell: true }
+      // Use venv Python directly to avoid activation issues
+      const venvPython = 'C:\\Users\\Taula\\Securehub\\backend\\venv\\Scripts\\python.exe'
+      cmd = venvPython
+      args = ['-m', 'uvicorn', 'main:app', '--port', '8000']
+      opts = { cwd: 'C:\\Users\\Taula\\Securehub\\backend', env, shell: false }
     } else {
       const pythonExe = path.join(BACKEND_DIR, 'python', 'python.exe')
       const hasBundledPython = fs.existsSync(pythonExe)
       cmd = hasBundledPython ? pythonExe : 'python'
       args = ['-m', 'uvicorn', 'main:app', '--port', '8000']
-      opts = { cwd: BACKEND_DIR, env, shell: true }
+      opts = { cwd: BACKEND_DIR, env, shell: false }
     }
 
     log(`Starting backend: ${cmd} ${args.join(' ')} (cwd: ${BACKEND_DIR})`)
@@ -109,17 +111,27 @@ function startBackend() {
 
     // Poll until ready or 30s timeout
     const deadline = Date.now() + 30_000
+    let pollCount = 0
     pollInterval = setInterval(() => {
-      http.get('http://localhost:8000', res => {
+      pollCount++
+      log(`Health check #${pollCount} → http://127.0.0.1:8000`)
+      const req = http.get('http://127.0.0.1:8000', res => {
         res.resume() // consume response to free socket
+        log(`Health check #${pollCount} ← HTTP ${res.statusCode}`)
         if (res.statusCode < 500) {
           log('Backend is ready.')
           done(null)
         }
-      }).on('error', () => {
+      })
+      req.on('error', err => {
+        log(`Health check #${pollCount} ← error: ${err.message}`)
         if (Date.now() > deadline) {
           done(new Error('Backend did not start within 30 seconds.\n\nCheck log: ' + LOG_FILE))
         }
+      })
+      req.setTimeout(400, () => {
+        log(`Health check #${pollCount} ← timeout`)
+        req.destroy()
       })
     }, 500)
   })
