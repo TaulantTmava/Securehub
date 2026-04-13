@@ -9,6 +9,10 @@ backend/modules/__pycache__/
 *.egg-info/
 dist/
 build/
+# Allow electron-builder icon assets in frontend/build/
+!frontend/build/
+!frontend/build/icon.ico
+!frontend/build/icon.png
 
 # Node
 frontend/node_modules/
