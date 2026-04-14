@@ -3,17 +3,16 @@ const fs = require('fs')
 const path = require('path')
 const os = require('os')
 
-// Read port from the temp file synchronously so config.js can use it
-// as a plain value immediately (no async required in components).
+// Read the port file synchronously so config.js gets the value immediately
+// (no async needed in React components). main.js writes this before creating the window.
 const PORT_FILE = path.join(os.tmpdir(), 'securehub_port.txt')
-let backendPort = 8765
+let port = 8765
 try {
-  const raw = fs.readFileSync(PORT_FILE, 'utf8').trim()
-  const parsed = parseInt(raw, 10)
-  if (parsed >= 1024 && parsed <= 65535) backendPort = parsed
+  const p = parseInt(fs.readFileSync(PORT_FILE, 'utf8').trim(), 10)
+  if (p >= 1024 && p <= 65535) port = p
 } catch (_) {}
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  backendPort,                                             // sync — used by src/config.js
-  getBackendPort: () => ipcRenderer.invoke('get-backend-port'), // async IPC fallback
+  backendPort: port,
+  getBackendPort: () => ipcRenderer.invoke('get-backend-port'),
 })
