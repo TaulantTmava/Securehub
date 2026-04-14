@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import axios from 'axios'
 import './TheHive.css'
 
-const API = 'http://localhost:8000/thehive'
+const API = 'http://localhost:8765/thehive'
 
 const SEVERITY_MAP = {
   1: { label: 'Low', cls: 'sev-low' },

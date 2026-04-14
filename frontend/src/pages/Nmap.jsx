@@ -16,7 +16,7 @@ export default function Nmap() {
     setResults(null)
 
     try {
-      const res = await axios.get('http://localhost:8000/nmap/scan', {
+      const res = await axios.get('http://localhost:8765/nmap/scan', {
         params: { target: target.trim(), args },
       })
       setResults(res.data.results)

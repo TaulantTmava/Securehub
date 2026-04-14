@@ -75,7 +75,7 @@ function startBackend() {
     if (isDev) {
       // Use venv Python directly to avoid activation issues
       cmd = 'C:\\Users\\Taula\\Securehub\\backend\\venv\\Scripts\\python.exe'
-      args = ['-m', 'uvicorn', 'main:app', '--port', '8000']
+      args = ['-m', 'uvicorn', 'main:app', '--port', '8765']
       opts = { cwd: 'C:\\Users\\Taula\\Securehub\\backend', env, shell: false }
     } else {
       // Production: use the self-contained PyInstaller exe bundled in resources
@@ -112,8 +112,8 @@ function startBackend() {
     let pollCount = 0
     pollInterval = setInterval(() => {
       pollCount++
-      log(`Health check #${pollCount} → http://127.0.0.1:8000`)
-      const req = http.get('http://127.0.0.1:8000', res => {
+      log(`Health check #${pollCount} → http://127.0.0.1:8765`)
+      const req = http.get('http://127.0.0.1:8765', res => {
         res.resume() // consume response to free socket
         log(`Health check #${pollCount} ← HTTP ${res.statusCode}`)
         if (res.statusCode < 500) {

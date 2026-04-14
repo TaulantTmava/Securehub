@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import './Setup.css'
 
-const API = 'http://localhost:8000'
+const API = 'http://localhost:8765'
 
 const TOOLS = [
   { key: 'nmap',        label: 'Nmap',         desc: 'Network scanner',                  auto: true  },

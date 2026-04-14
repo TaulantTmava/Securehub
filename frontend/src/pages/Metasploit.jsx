@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import axios from 'axios'
 import './Metasploit.css'
 
-const API = 'http://localhost:8000/metasploit'
+const API = 'http://localhost:8765/metasploit'
 
 // ── Status Banner ─────────────────────────────────────────────────────────────
 function StatusBanner({ status, loading }) {

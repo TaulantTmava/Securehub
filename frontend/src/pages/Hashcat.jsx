@@ -83,7 +83,7 @@ function CrackTab() {
     setNotInstalled(false)
 
     try {
-      const res = await axios.post('http://localhost:8000/hashcat/crack', {
+      const res = await axios.post('http://localhost:8765/hashcat/crack', {
         hash: hash.trim(),
         hashtype,
         wordlist,
@@ -225,7 +225,7 @@ function IdentifyTab() {
     setError(null)
 
     try {
-      const res = await axios.get('http://localhost:8000/hashcat/identify', {
+      const res = await axios.get('http://localhost:8765/hashcat/identify', {
         params: { hash: hash.trim() },
       })
       setTypes(res.data.possible_types)
