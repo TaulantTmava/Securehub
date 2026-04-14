@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import './Dashboard.css'
 
 const modules = [
@@ -90,6 +91,7 @@ function StatusBadge({ status }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   return (
     <div className="dashboard">
       <div className="page-header">
@@ -122,7 +124,7 @@ export default function Dashboard() {
           <div
             key={mod.id}
             className={`module-card ${mod.status === 'coming-soon' ? 'module-card-disabled' : 'module-card-active'}`}
-            onClick={() => mod.path && (window.location.href = mod.path)}
+            onClick={() => mod.path && navigate(mod.path)}
           >
             <div className="module-card-header">
               <div className={`module-icon ${mod.status === 'coming-soon' ? 'module-icon-dim' : ''}`}>
