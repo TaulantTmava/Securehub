@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import { API_BASE as API } from '../config'
 import './Setup.css'
-
-const API = 'http://localhost:8765'
 
 const TOOLS = [
   { key: 'nmap',        label: 'Nmap',         desc: 'Network scanner',                  auto: true  },

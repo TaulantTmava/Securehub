@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import axios from 'axios'
+import { API_BASE } from '../config'
 import './Hashcat.css'
 
 const HASH_TYPES = [
@@ -83,7 +84,7 @@ function CrackTab() {
     setNotInstalled(false)
 
     try {
-      const res = await axios.post('http://localhost:8765/hashcat/crack', {
+      const res = await axios.post(`${API_BASE}/hashcat/crack`, {
         hash: hash.trim(),
         hashtype,
         wordlist,
@@ -225,7 +226,7 @@ function IdentifyTab() {
     setError(null)
 
     try {
-      const res = await axios.get('http://localhost:8765/hashcat/identify', {
+      const res = await axios.get(`${API_BASE}/hashcat/identify`, {
         params: { hash: hash.trim() },
       })
       setTypes(res.data.possible_types)

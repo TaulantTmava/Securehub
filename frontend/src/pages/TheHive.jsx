@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react'
+import { API_BASE } from '../config'
 import axios from 'axios'
 import './TheHive.css'
 
-const API = 'http://localhost:8765/thehive'
+const API = `${API_BASE}/thehive`
 
 const SEVERITY_MAP = {
   1: { label: 'Low', cls: 'sev-low' },

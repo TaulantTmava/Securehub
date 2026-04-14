@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
+import { API_BASE } from '../config'
 import axios from 'axios'
 import './Aircrack.css'
 
-const API = 'http://localhost:8765/aircrack'
+const API = `${API_BASE}/aircrack`
 
 // ── Status Banner ─────────────────────────────────────────────────────────────
 function StatusBanner({ status, loading }) {

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import axios from 'axios'
+import { API_BASE } from '../config'
 import './Nmap.css'
 
 export default function Nmap() {
@@ -16,7 +17,7 @@ export default function Nmap() {
     setResults(null)
 
     try {
-      const res = await axios.get('http://localhost:8765/nmap/scan', {
+      const res = await axios.get(`${API_BASE}/nmap/scan`, {
         params: { target: target.trim(), args },
       })
       setResults(res.data.results)
