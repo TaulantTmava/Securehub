@@ -1,6 +1,6 @@
 {
   "name": "securehub",
-  "version": "1.4.0",
+  "version": "1.6.0",
   "description": "SecureHub - Security Toolkit Desktop App",
   "main": "main.js",
   "scripts": {
@@ -49,6 +49,9 @@
       "main.js",
       "preload.js",
       "package.json"
+    ],
+    "asarUnpack": [
+      "preload.js"
     ],
     "extraResources": [
       {

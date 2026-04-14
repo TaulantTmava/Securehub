@@ -295,7 +295,11 @@ function createMainWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
+      // In production, preload.js is unpacked from the asar so Electron can load it.
+      // asarUnpack extracts it to app.asar.unpacked/preload.js.
+      preload: isDev
+        ? path.join(__dirname, 'preload.js')
+        : path.join(process.resourcesPath, 'app.asar.unpacked', 'preload.js'),
     },
     titleBarStyle: 'default',
     ...(iconPath ? { icon: iconPath } : {}),

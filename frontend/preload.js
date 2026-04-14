@@ -1,10 +1,11 @@
-const { contextBridge } = require('electron')
+const { contextBridge, ipcRenderer } = require('electron')
 const fs = require('fs')
 const path = require('path')
 const os = require('os')
 
+// Read port from the temp file synchronously so config.js can use it
+// as a plain value immediately (no async required in components).
 const PORT_FILE = path.join(os.tmpdir(), 'securehub_port.txt')
-
 let backendPort = 8765
 try {
   const raw = fs.readFileSync(PORT_FILE, 'utf8').trim()
@@ -13,5 +14,6 @@ try {
 } catch (_) {}
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  backendPort,
+  backendPort,                                             // sync — used by src/config.js
+  getBackendPort: () => ipcRenderer.invoke('get-backend-port'), // async IPC fallback
 })
