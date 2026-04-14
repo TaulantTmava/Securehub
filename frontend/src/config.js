@@ -1,13 +1,10 @@
-// Sync — available immediately from preload.js port file read.
-// Falls back to 8765 when running outside Electron (e.g. vite dev in browser).
-export const BACKEND_PORT = window.electronAPI?.backendPort ?? 8765
-export const API_BASE = `http://localhost:${BACKEND_PORT}`
+// The port is resolved via IPC from the Electron main process.
+// API_BASE starts at the default and is updated as soon as the IPC
+// round-trip completes (well before any user-initiated API call).
+export let API_BASE = 'http://localhost:8765'
 
-// Async — IPC fallback if the sync value is ever stale.
-export const getApiBase = async () => {
-  if (window.electronAPI?.getBackendPort) {
-    const port = await window.electronAPI.getBackendPort()
-    return `http://localhost:${port}`
-  }
-  return API_BASE
+if (window.electronAPI?.getBackendPort) {
+  window.electronAPI.getBackendPort().then(port => {
+    if (port) API_BASE = `http://localhost:${port}`
+  }).catch(() => {})
 }
