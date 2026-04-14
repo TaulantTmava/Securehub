@@ -28,3 +28,8 @@ app.include_router(setup_router, prefix="/setup")
 @app.get("/")
 def root():
     return {"status": "SecureHub API running"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=5000)
