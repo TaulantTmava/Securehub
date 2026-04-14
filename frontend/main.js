@@ -192,7 +192,7 @@ function createLoadingWindow() {
 
 // ── Main window ──────────────────────────────────────────────────────────────
 
-const DEV_URL = 'http://localhost:5174'
+const DEV_URL = 'http://localhost:5173'
 
 function createMainWindow() {
   const iconPath = isDev ? path.join(__dirname, 'public', 'icon.ico') : undefined
@@ -206,10 +206,24 @@ function createMainWindow() {
     ...(iconPath ? { icon: iconPath } : {}),
   })
 
+  win.once('ready-to-show', () => {
+    log('Main window ready-to-show')
+    win.show()
+  })
+
+  win.webContents.on('did-fail-load', (event, code, desc, url) => {
+    log(`Window failed to load (${code} ${desc}) url=${url}`)
+  })
+
+  win.webContents.openDevTools()
+
   if (isDev) {
+    log(`Loading dev URL: ${DEV_URL}`)
     win.loadURL(DEV_URL)
   } else {
-    win.loadFile(path.join(__dirname, 'dist', 'index.html'))
+    const indexPath = path.join(__dirname, 'dist', 'index.html')
+    log(`Loading production file: ${indexPath}`)
+    win.loadFile(indexPath)
   }
 
   win.setMenuBarVisibility(false)
@@ -254,13 +268,15 @@ app.whenReady().then(async () => {
 
   mainWin.once('ready-to-show', () => {
     if (!loader.isDestroyed()) loader.close()
-    mainWin.show()
   })
 
-  // Fallback: if ready-to-show never fires, open after 10s
+  // Fallback: if ready-to-show never fires, show after 10s
   setTimeout(() => {
     if (!loader.isDestroyed()) loader.close()
-    if (!mainWin.isDestroyed() && !mainWin.isVisible()) mainWin.show()
+    if (!mainWin.isDestroyed() && !mainWin.isVisible()) {
+      log('Fallback: forcing window visible after 10s timeout')
+      mainWin.show()
+    }
   }, 10_000)
 
   app.on('activate', () => {
