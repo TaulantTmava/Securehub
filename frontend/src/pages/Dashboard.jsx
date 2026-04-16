@@ -85,7 +85,7 @@ function StatusBadge({ status }) {
     return <span className="badge badge-active">Active</span>
   }
   if (status === 'wsl2') {
-    return <span className="badge badge-active">Active via WSL2</span>
+    return <span className="badge badge-active">Active</span>
   }
   return <span className="badge badge-info">Coming Soon</span>
 }
@@ -106,7 +106,7 @@ export default function Dashboard() {
         </div>
         <div className="stat-card">
           <div className="stat-value">2</div>
-          <div className="stat-label">Via WSL2</div>
+          <div className="stat-label">Linux Only</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">1</div>
